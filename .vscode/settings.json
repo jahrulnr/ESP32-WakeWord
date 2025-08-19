@@ -1,0 +1,10 @@
+{
+	"files.associations": {
+		"*.twig": "twig",
+		"*.vcl": "bat",
+		"*.cf": "properties",
+		"*.sh": "shellscript",
+		"kiss_fft.c": "cpp"
+	},
+	"idf.pythonInstallPath": "/home/jahrulnr/miniconda3/bin/python"
+}
