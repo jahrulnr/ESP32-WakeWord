@@ -65,11 +65,6 @@ WakeWord/
 - **Model Partition**: 0x710000 (5.9MB available)
 - **Build Environment**: `esp32-s3-devkitc1-n16r8`
 
-#### Seeed XIAO ESP32S3 (Alternative)
-- **Compact Form Factor**
-- **Build Environment**: `seeed_xiao_esp32s3`
-- **Additional Flag**: `-DSEED_XIAO_ESP32S3`
-
 ### Partition Layout (hiesp.csv)
 ```
 Name      Type    SubType   Offset    Size      Purpose
