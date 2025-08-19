@@ -194,7 +194,7 @@ esptool.py --baud 2000000 write_flash 0xCF0000 voice_data.bin
 **Cause**: ESP-IDF driver compatibility issues.
 
 **Solution**:
-- Use the specified platform version with ESP-IDF v4.x compatibility
+- Use the specified platform version with ESP-IDF v5.x compatibility
 - Ensure PSRAM cache fix flags are enabled
 - Check I2S pin configuration
 
