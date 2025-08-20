@@ -13,7 +13,7 @@ void displaySoundDetector() {
 
 	// Draw sound 
 	display->drawStr(0, 35, "Mic:");
-	int micLevel = i2sMicrophone->readLevel();
+	int micLevel = microphone->readLevel();
 	int barWidth = map(micLevel, 0, 4096, 0, 80);
 	display->drawFrame(45, 30, 80, 8);
 	display->drawBox(45, 30, barWidth, 8);

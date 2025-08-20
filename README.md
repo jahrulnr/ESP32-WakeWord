@@ -33,14 +33,25 @@ WakeWord/
 ├── src/                        # Main application code
 │   ├── main.cpp               # Application entry point
 │   ├── app/                   # Application logic
-│   └── boot/                  # Boot sequence
+│   │   ├── callback/          # ESP-SR event callbacks
+│   │   ├── display/           # Display functions
+│   │   ├── tasks/             # FreeRTOS task implementations
+│   │   ├── callback_list.h    # Callback function declarations
+│   │   ├── display_list.h     # Display function declarations
+│   │   ├── runTasks.cpp       # Task creation and management
+│   │   └── tasks.h            # Task handle declarations
+│   └── boot/                  # Boot sequence and initialization
+│       ├── init.h             # Global variable declarations
+│       ├── setup.cpp          # System setup functions
+│       └── constants.h        # Application constants
 ├── include/                   # Project header files
-│   └── app_config.h           # App configuration
+│   └── app_config.h           # Hardware pin and config definitions
 ├── lib/                       # Custom libraries
-│   ├── EspWakeWord/           # ESP-SR wake word wrapper
-│   ├── Microphone/            # I2S microphone interface
-│   ├── Display/               # U8g2 display support
-│   └── AppModels/             # Application data models
+│   ├── Microphone/            # I2S microphone interface (ESP-IDF v5+ STD API)
+│   ├── Display/               # U8g2 display wrapper
+│   ├── FaceDisplay/           # Animated face graphics for OLED
+│   ├── Notification/          # FreeRTOS inter-task messaging system
+│   └── MochiDisplay/          # Display character animations
 ├── model/                     # ESP-SR model management
 │   ├── pack_model.py          # Model packing script
 │   ├── movemodel.py           # ESP-IDF model mover
@@ -49,7 +60,6 @@ WakeWord/
 │   ├── multinet_model/        # Speech command recognition
 │   ├── vadnet_model/          # Voice activity detection
 │   └── nsnet_model/           # Noise suppression
-├── esp-sr/                    # ESP-SR framework submodule
 ├── platformio.ini             # PlatformIO configuration
 ├── hiesp.csv                  # Custom partition table
 └── boards/                    # Custom board definitions
@@ -59,7 +69,7 @@ WakeWord/
 
 ### Supported Boards
 
-#### ESP32-S3-DevKitC-1-N16R8 (Primary)
+#### ESP32-S3-DevKitC-1-N16R8
 - **Flash**: 16MB
 - **PSRAM**: 8MB
 - **Model Partition**: 0x710000 (5.9MB available)
@@ -73,23 +83,6 @@ app1      app     ota_1     0x310000  3MB       OTA update firmware
 spiffs    data    spiffs    0x610000  1MB       File system
 model     data    spiffs    0x710000  5.9MB     ESP-SR models
 voice_data data   fat       0xCF0000  3MB       TTS voice data
-```
-
-## 🎯 Wake Word Models
-
-### Current Configuration
-- **Wake Word**: "Hi ESP" (wn9s_hiesp)
-- **Model Type**: WakeNet 9 Small (optimized)
-- **Language**: English
-- **Detection Mode**: Normal (DET_MODE_90)
-
-### Available Wake Words
-```
-wn9s_hiesp      - "Hi ESP" (Small, recommended)
-wn9_hiesp       - "Hi ESP" (Full model)  
-wn9_alexa       - "Alexa"
-wn9_xiaoaitongxue - "小爱同学" (Chinese)
-wn9_hilexin     - "Hi Lexin"
 ```
 
 ## 📦 Model Management
@@ -108,19 +101,6 @@ platform = https://github.com/pioarduino/platform-espressif32/archive/refs/tags/
 framework = arduino
 ```
 
-#### Essential Build Flags
-```ini
-build_flags = 
-    -DCORE_DEBUG_LEVEL=3                    # Debug logging
-    -mfix-esp32-psram-cache-issue           # PSRAM stability
-    -mfix-esp32-psram-cache-strategy=memw   # PSRAM cache strategy
-    -DCONFIG_SR_VADN_VADNET1_MEDIUM=y       # Voice activity detection
-    -DCONFIG_SR_WN_WN9S_HIESP=y             # "Hi ESP" wake word
-    -DCONFIG_ESP32S3_INSTRUCTION_CACHE_32KB=y  # Cache optimization
-    -DCONFIG_ESP32S3_DATA_CACHE_64KB=y      # Data cache size
-    -DCONFIG_ESP32S3_DATA_CACHE_LINE_64B=y  # Cache line size
-```
-
 #### Custom Partition Table
 ```ini
 board_build.partitions = hiesp.csv
@@ -135,13 +115,13 @@ board_build.partitions = hiesp.csv
 - **Frame Size**: 512 samples (32ms @ 16kHz)
 
 ### Pin Configuration
-Microphone pin configurations are defined in [`include/config_mic.h`](include/config_mic.h):
+Microphone pin configurations are defined in [`include/app_config.h`](include/app_config.h):
 
 **ESP32-S3-DevKitC-1-N16R8:**
 ```cpp
 #define MIC_DIN 11    // I2S data pin (SD)
 #define MIC_SCK 5     // I2S clock pin (SCK) 
-#define MIC_WS  13    // I2S word select pin (WS/FS)
+#define MIC_WS 13     // I2S word select pin (WS/FS)
 ```
 
 ### Compatible I2S Microphones
@@ -158,9 +138,38 @@ Microphone pin configurations are defined in [`include/config_mic.h`](include/co
 - **ST7789** 240x240 TFT (SPI)
 - **Other U8g2 compatible displays**
 
+### Display System Architecture
+The project includes multiple display modes for different types of feedback:
+
+#### 1. FaceDisplay System (Animated Faces)
+```cpp
+// Animated face with expressions and behaviors
+Face* faceDisplay = new Face(display, 128, 64, 40);
+faceDisplay->Expression.GoTo_Awe();       // Set expression
+faceDisplay->LookFront();                 // Set gaze direction
+faceDisplay->Update();                    // Animate and render
+```
+
+**Available Expressions:**
+- Normal, Happy, Sad, Angry, Surprised, Focused
+- Awe, Glee, Worried, Annoyed, Skeptic, Sleepy
+- Frustrated, Unimpressed, Suspicious, Squint, Furious, Scared
+
+#### 2. MochiDisplay System (Character Animation)
+```cpp
+// Pre-rendered frame-based animation (90 frames)
+#include "Mochi.h"
+Mochi::drawFrame(display);  // Plays animated character sequence
+```
+
+#### 3. Custom Display Functions
+- `displaySoundDetector()` - Real-time microphone level visualization
+- `displayListening()` - Animated microphone icon during command listening
+- `displayCommand(command)` - Command confirmation feedback
+
 ### Configuration
 ```cpp
-// U8g2 library integration
+// U8g2 library integration in lib/Display/
 #include <U8g2lib.h>
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 ```
@@ -177,6 +186,43 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 # Flash TTS voice data (if using text-to-speech)
 esptool.py --baud 2000000 write_flash 0xCF0000 voice_data.bin
 ```
+
+## ⚡ FreeRTOS Task Architecture
+
+### Core Tasks
+The application runs two main FreeRTOS tasks with specific priorities and core assignments:
+
+#### 1. Speech Recognition Task (Core 0, Priority 8)
+```cpp
+// Monitors ESP-SR system health and handles SR commands
+speechRecognitionTask()
+```
+- **Function**: System health monitoring, memory checks, SR system status
+- **Stack**: 4KB (1024 * 4)
+- **Features**: Periodic heap monitoring, SR pause/resume commands
+- **Monitoring**: 30-second health reports with memory statistics
+
+#### 2. Display Task (Core 1, Priority 19)  
+```cpp
+// Handles all display updates and animations
+displayTask()
+```
+- **Function**: UI rendering, animation updates, notification handling
+- **Stack**: 4KB (1024 * 4) 
+- **Update Rate**: 33ms (30 FPS)
+- **Modes**: Sound detector, Face animations, Mochi character animations
+
+### Inter-Task Communication
+```cpp
+// FreeRTOS-native notification system
+notification->send(NOTIFICATION_DISPLAY, (void*)EVENT_DISPLAY_WAKEWORD);
+void* event = notification->consume(NOTIFICATION_DISPLAY, timeout_ticks);
+```
+
+### Task Priorities and Core Assignment
+- **Core 0**: Speech recognition processing (lower priority, CPU-intensive)
+- **Core 1**: Display updates (higher priority, real-time UI responsiveness)
+- **Priority 19 > 8**: Ensures smooth UI even during heavy SR processing
 
 ## 🐛 Troubleshooting
 

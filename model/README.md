@@ -16,16 +16,13 @@ cp -r vadnet_model/vadnet1_medium target/
 python3 pack_model.py -m target -o srmodels.bin
 
 # 3. Flash to your ESP32-S3-DevKitC-1-N16R8 (hiesp.csv partition table)
-esptool.py --baud 2000000 write_flash 0x810000 srmodels.bin
+esptool.py --baud 2000000 write_flash 0x710000 srmodels.bin
 ```
 
 ### Build Project
 ```bash
-# ESP32-S3-DevKitC-1-N16R8 (primary board)
+# ESP32-S3-DevKitC-1-N16R8
 pio run -e esp32-s3-devkitc1-n16r8
-
-# Seeed XIAO ESP32S3 (alternative)
-pio run -e seeed_xiao_esp32s3
 ```
 
 ## 📁 Model Structure
@@ -162,7 +159,7 @@ python3 pack_model.py -m target_cn -o srmodels_cn.bin
 
 ### Current Partition Layout (16MB ESP32-S3)
 ```
-model partition: 0x810000 (7.8MB)
+model partition: 0x710000 (7.8MB)
 voice_data:     0xCF0000 (3MB) 
 ```
 
@@ -171,11 +168,11 @@ voice_data:     0xCF0000 (3MB)
 # Flash main SR models to model partition
 esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 2000000 \
     --before default_reset --after hard_reset \
-    write_flash 0x810000 target/srmodels.bin
+    write_flash 0x710000 target/srmodels.bin
 
 # Verify flash
 esptool.py --chip esp32s3 --port /dev/ttyUSB0 \
-    verify_flash 0x810000 target/srmodels.bin
+    verify_flash 0x710000 target/srmodels.bin
 ```
 
 ### Flash TTS Voice Data (Optional)
@@ -204,14 +201,7 @@ pio run -e esp32-s3-devkitc1-n16r8
 ```
 - **Flash**: 16MB
 - **PSRAM**: 8MB  
-- **Model Partition**: 0x810000 (7.8MB available)
-
-#### Seeed XIAO ESP32S3 (Alternative)
-```bash
-pio run -e seeed_xiao_esp32s3
-```
-- **Compact form factor**
-- **Additional build flag**: `-DSEED_XIAO_ESP32S3`
+- **Model Partition**: 0x710000 (7.8MB available)
 
 ### List Available Models
 ```bash
@@ -393,7 +383,7 @@ python3 pack_model.py -m target -o srmodels.bin
 
 # flash to model partition (your hiesp.csv partition table)
 ```shell
-esptool.py --baud 2000000 --before default_reset --after hard_reset write_flash 0x810000 srmodels.bin
+esptool.py --baud 2000000 --before default_reset --after hard_reset write_flash 0x710000 srmodels.bin
 ```
 
 # flash tts (if using TTS voice data)

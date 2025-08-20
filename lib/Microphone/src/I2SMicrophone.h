@@ -1,53 +1,86 @@
 #pragma once
 
 #include <Arduino.h>
-#include <driver/i2s.h>
+#include "driver/i2s_std.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
 
 /**
- * I2SMicrophone class for digital microphone input using I2S protocol
+ * I2SMicrophone class for digital microphone input using ESP-IDF v5+ I2S STD API
  * 
- * Provides audio input capabilities using I2S protocol with PDM or analog microphones.
+ * This implementation uses the new ESP-IDF v5.x I2S Standard driver which provides
+ * better performance, cleaner API, and improved resource management compared to
+ * the legacy I2S driver.
  */
 class I2SMicrophone {
 public:
     /**
-     * Constructor
+     * Constructor for I2S Standard microphone
      * 
-     * @param dataPin Data input pin
-     * @param clockPin Clock pin (for PDM microphones) or bit clock pin (for I2S microphones)
-     * @param wordSelectPin Word select pin (for I2S microphones, -1 for PDM)
-     * @param i2sPort I2S port number (I2S_NUM_0 or I2S_NUM_1)
-     * @param isPDM Whether this is a PDM microphone (true) or standard I2S (false)
+     * @param dataPin I2S data input pin (DIN/SD)
+     * @param clockPin I2S bit clock pin (BCLK/SCK)
+     * @param wordSelectPin I2S word select pin (WS/LRCLK)
+     * @param portNum I2S port number (I2S_NUM_0 or I2S_NUM_1)
      */
-    I2SMicrophone(int dataPin, int clockPin, int wordSelectPin = -1, 
-                 i2s_port_t i2sPort = I2S_NUM_0);
+    I2SMicrophone(gpio_num_t dataPin, gpio_num_t clockPin, gpio_num_t wordSelectPin, 
+                i2s_port_t portNum = I2S_NUM_0);
 
     /**
-     * Destructor
+     * Destructor - properly cleans up I2S resources
      */
     ~I2SMicrophone();
 
     /**
-     * Initialize the I2S microphone
+     * Initialize the I2S Standard microphone
      * 
      * @param sampleRate Sample rate in Hz (8000, 16000, 22050, 44100, 48000)
-     * @param bitsPerSample Bits per sample (16 or 32)
-     * @return true if initialization was successful, false otherwise
+     * @param bitsPerSample Bits per sample (16, 24, or 32)
+     * @param channels Number of channels (1 for mono, 2 for stereo)
+     * @return ESP_OK if successful, error code otherwise
      */
-    bool init(uint32_t sampleRate = 16000, int bitsPerSample = 32);
+    esp_err_t init(uint32_t sampleRate = 16000, i2s_data_bit_width_t bitsPerSample = I2S_DATA_BIT_WIDTH_16BIT, 
+                   i2s_slot_mode_t channels = I2S_SLOT_MODE_MONO);
 
     /**
-     * Read audio data from the microphone
+     * Start the I2S channel (begin receiving data)
      * 
-     * @param buffer Buffer to store audio data
-     * @param bufferSize Size of the buffer in bytes
-     * @param timeoutMs Timeout in milliseconds
-     * @return Number of bytes read, or -1 on error
+     * @return ESP_OK if successful, error code otherwise
      */
-    int readAudioData(uint8_t* buffer, size_t bufferSize, uint32_t timeoutMs = 100);
+    esp_err_t start();
 
     /**
-     * Read audio samples into an int16_t buffer
+     * Stop the I2S channel
+     * 
+     * @return ESP_OK if successful, error code otherwise
+     */
+    esp_err_t stop();
+
+    /**
+     * Read audio samples from the microphone
+     * 
+     * @param buffer Buffer to store audio samples
+     * @param bufferSize Size of buffer in bytes
+     * @param bytesRead Pointer to store actual bytes read
+     * @param timeoutMs Timeout in milliseconds
+     * @return ESP_OK if successful, error code otherwise
+     */
+    esp_err_t readAudioData(void* buffer, size_t bufferSize, size_t* bytesRead, 
+                           uint32_t timeoutMs = 100);
+
+    /**
+     * Read audio samples into an int16_t buffer (convenience method)
+     * 
+     * @param buffer Buffer to store audio samples (int16_t)
+     * @param sampleCount Number of samples to read
+     * @param samplesRead Pointer to store actual samples read
+     * @param timeoutMs Timeout in milliseconds
+     * @return ESP_OK if successful, error code otherwise
+     */
+    esp_err_t readSamples(int16_t* buffer, size_t sampleCount, size_t* samplesRead, 
+                         uint32_t timeoutMs = 100);
+
+    /**
+     * Read audio samples and return count (for compatibility with old API)
      * 
      * @param buffer Buffer to store audio samples (int16_t)
      * @param sampleCount Number of samples to read
@@ -57,43 +90,11 @@ public:
     int readSamples(int16_t* buffer, size_t sampleCount, uint32_t timeoutMs = 100);
 
     /**
-     * Read the current audio level (peak value from a short sample)
+     * Read current audio level (peak value from a sample buffer)
      * 
-     * @return Audio level value (0-32767 for 16-bit samples)
+     * @return Peak audio level (0-32767), or -1 on error
      */
     int readLevel();
-
-    /**
-     * Read the peak audio level over a specified duration
-     * 
-     * @param durationMs Duration to sample in milliseconds
-     * @return Peak audio level during the sampling period
-     */
-    int readPeakLevel(int durationMs = 100);
-
-    /**
-     * Read the average audio level over a specified duration
-     * 
-     * @param durationMs Duration to sample in milliseconds
-     * @return Average audio level during the sampling period
-     */
-    int readAverageLevel(int durationMs = 100);
-
-    /**
-     * Check if sound is detected above a threshold
-     * 
-     * @param threshold The threshold level to compare against
-     * @return true if sound level is above threshold, false otherwise
-     */
-    bool isSoundDetected(int threshold = 2000);
-
-    /**
-     * Set the sample rate
-     * 
-     * @param sampleRate New sample rate in Hz
-     * @return true if successful, false otherwise
-     */
-    bool setSampleRate(uint32_t sampleRate);
 
     /**
      * Check if the microphone is properly initialized
@@ -102,29 +103,88 @@ public:
      */
     bool isInitialized() const;
 
+    /**
+     * Check if the I2S channel is currently active
+     * 
+     * @return true if active, false otherwise
+     */
+    bool isActive() const;
+
+    /**
+     * Get current sample rate
+     * 
+     * @return Sample rate in Hz
+     */
+    uint32_t getSampleRate() const;
+
+    /**
+     * Get current bits per sample
+     * 
+     * @return Bits per sample
+     */
+    i2s_data_bit_width_t getBitsPerSample() const;
+
+    /**
+     * Get current channel mode
+     * 
+     * @return Channel mode (mono/stereo)
+     */
+    i2s_slot_mode_t getChannelMode() const;
+
+    /**
+     * Preload DMA buffers to reduce initial latency
+     * 
+     * @return ESP_OK if successful, error code otherwise
+     */
+    esp_err_t preloadDMA();
+
+    /**
+     * Calculate the optimal buffer size for given duration
+     * 
+     * @param durationMs Duration in milliseconds
+     * @return Buffer size in bytes
+     */
+    size_t calculateBufferSize(uint32_t durationMs) const;
+
 private:
-    const char* _tag;
-    int _dataPin;
-    int _clockPin;
-    int _wsPin;
-    i2s_port_t _i2sPort;
-    bool _initialized;
+    static const char* TAG;
+
+    // Hardware configuration
+    gpio_num_t _dataPin;
+    gpio_num_t _clockPin;
+    gpio_num_t _wordSelectPin;
+    i2s_port_t _portNum;
+
+    // I2S configuration
     uint32_t _sampleRate;
-    int _bitsPerSample;
-    int _baselineLevel;
+    i2s_data_bit_width_t _bitsPerSample;
+    i2s_slot_mode_t _channelMode;
+
+    // I2S handles
+    i2s_chan_handle_t _rxHandle;
+
+    // State flags
+    bool _initialized;
+    bool _active;
 
     /**
-     * Configure I2S interface
+     * Configure I2S Standard channel
      * 
-     * @return true if successful, false otherwise
+     * @return ESP_OK if successful, error code otherwise
      */
-    bool configureI2S();
+    esp_err_t configureChannel();
 
     /**
-     * Get the baseline noise level (for calibration)
+     * Get bytes per sample based on bit width
      * 
-     * @param samplingTime Time to sample baseline in milliseconds
-     * @return Baseline noise level
+     * @return Bytes per sample
      */
-    int calibrateBaseline(int samplingTime = 1000);
+    size_t getBytesPerSample() const;
+
+    /**
+     * Get number of channels as integer
+     * 
+     * @return Number of channels (1 or 2)
+     */
+    size_t getChannelCount() const;
 };

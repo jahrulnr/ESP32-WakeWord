@@ -4,3 +4,5 @@
 
 void displaySoundDetector();
 void displayHappyFace();
+void displayListening();
+void displayCommand(const char* command);
