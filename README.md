@@ -35,7 +35,7 @@ WakeWord/
 │   ├── app/                   # Application logic
 │   └── boot/                  # Boot sequence
 ├── include/                   # Project header files
-│   └── config_mic.h           # I2S microphone pin configuration
+│   └── app_config.h           # App configuration
 ├── lib/                       # Custom libraries
 │   ├── EspWakeWord/           # ESP-SR wake word wrapper
 │   ├── Microphone/            # I2S microphone interface

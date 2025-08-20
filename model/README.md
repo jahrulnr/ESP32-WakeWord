@@ -402,7 +402,6 @@ esptool.py --baud 2000000 --before default_reset --after hard_reset write_flash 
 ```
 
 ---
-*Last updated: August 2025*
 
 # References:
 - https://xujiwei.com/blog/2025/04/esp32-arduino-esp-sr-tts/

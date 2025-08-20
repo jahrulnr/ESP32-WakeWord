@@ -1,5 +1,8 @@
 #pragma once
 
+#define SCL_PIN SCL
+#define SDA_PIN SDA
+
 enum E_MIC_TYPE {
 	MIC_TYPE_I2S,
 	MIC_TYPE_ANALOG,
@@ -18,8 +21,9 @@ enum E_MIC_TYPE {
 #define MIC_SCK 5          // I2S clock pin (SCK)
 #define MIC_WS 13             // I2S word select pin (WS/FS)
 #endif
+
 #define MIC_SAMPLE_RATE 16000
 #define MIC_BIT_PER_SAMPLE 32
 
-#define SCL_PIN SCL
-#define SDA_PIN SDA
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64

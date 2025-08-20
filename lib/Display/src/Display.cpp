@@ -1,16 +1,10 @@
 #include "Display.h"
-#include <Wire.h>
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
-int _scl, _sda;
-bool _initiate = false;
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C* display;
 
-void setupDisplay(int scl, int sda) {
-	_scl = scl;
-	_sda = sda;
-
-	Wire.begin(_sda, _scl);
-	_initiate = display.begin();
+void setupDisplay(int sda, int scl) {
+	display = new U8G2_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, scl, sda);
+	display->begin();
 }
 
 

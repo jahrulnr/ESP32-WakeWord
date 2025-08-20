@@ -1,31 +1,45 @@
 #include "app/tasks.h"
-#include "I2SMicrophone.h"
+#include "Mochi.h"
 
 TaskHandle_t displayTaskHandle = nullptr;
 
 void displayTask(void *param) {
   TickType_t lastWakeTime = xTaskGetTickCount();
   TickType_t updateFrequency = pdMS_TO_TICKS(33);
+	size_t updateDelay = 0;
+	const char* lastEvent;
+
+	// wait notification initiate
+	while (!notification)
+		taskYIELD();
+	
+
 	while(1) {
 		vTaskDelayUntil(&lastWakeTime, updateFrequency);
-		display.clearBuffer();
+		display->clearBuffer();
 
-		// Draw header
-		display.setFont(u8g2_font_7x13_tf);
-		display.drawStr(0, 10, "Sound detector");
-		display.drawLine(0, 12, 127, 12);
+		if (!notification->has(NOTIFICATION_DISPLAY) && updateDelay == 0) {
+			displaySoundDetector();
+	    display->sendBuffer();
+			continue;
+		} 
 
-		// Draw status
-		display.setFont(u8g2_font_5x8_tf);
-		display.drawStr(0, 25, "Status:");
-		display.drawStr(50, 25, "Listen");
+		void* event = notification->has(NOTIFICATION_DISPLAY) 
+			? notification->consume(NOTIFICATION_DISPLAY, updateFrequency)
+			: nullptr;
+		if ((event && strcmp((const char*)event, EVENT_DISPLAY_WAKEWORD) == 0) || strcmp(lastEvent, EVENT_DISPLAY_WAKEWORD) == 0) {
+			if (updateDelay == 0) {
+				updateDelay = millis() + 3000;
+				lastEvent = EVENT_DISPLAY_WAKEWORD;
+			}
+			// displayHappyFace();
+			Mochi::drawFrame(display);
+			// send buffer will handled by Face class
+		}
 
-		// Draw sound 
-		display.drawStr(0, 35, "Mic:");
-		int micLevel = i2sMicrophone->readLevel();
-    int barWidth = map(micLevel, 0, 4096, 0, 80);
-    display.drawFrame(45, 30, 80, 8);
-    display.drawBox(45, 30, barWidth, 8);
-    display.sendBuffer();
+		if (updateDelay <= millis()) {
+			updateDelay = 0;
+			lastEvent = "";
+		}
 	}
 }

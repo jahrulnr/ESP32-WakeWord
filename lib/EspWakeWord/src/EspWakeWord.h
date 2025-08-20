@@ -12,3 +12,4 @@ extern model_iface_data_t *model_data;
 
 void setupEspWakeWord();
 void loadEspWakeWord(void* param);
+const char* getWakeWordName(wakenet_state_t state);

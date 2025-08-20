@@ -10,30 +10,33 @@ void runTasks(){
 	// 	&tfWakeWordTaskHandle
 	// );
 
-	xTaskCreate(
+	xTaskCreateUniversal(
 		loadEspWakeWord,
 		"loadEspWakeWordTaskHandle",
 		1024 * 8,
 		NULL,
 		19,
-		&displayTaskHandle
+		&displayTaskHandle,
+		0
 	);
 
-	xTaskCreate(
+	xTaskCreateUniversal(
 		espWakeWordCaptureTask,
 		"espWakeWordCaptureTask",
-		1024 * 30,
-		NULL,
-		0,
-		&espWakeWordCaptureTaskHandle
-	);
-
-	xTaskCreate(
-		displayTask,
-		"displayTaskTaskHandle",
 		1024 * 8,
 		NULL,
-		0,
-		&displayTaskHandle
+		5,
+		&espWakeWordCaptureTaskHandle,
+		0
+	);
+
+	xTaskCreateUniversal(
+		displayTask,
+		"displayTaskTaskHandle",
+		1024 * 4,
+		NULL,
+		19,
+		&displayTaskHandle,
+		1
 	);
 }

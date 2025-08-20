@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boot/init.h"
+#include "display_list.h"
 
 extern TaskHandle_t tfWakeWordTaskHandle;
 extern TaskHandle_t espWakeWordTaskHandle;
