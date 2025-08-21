@@ -4,7 +4,13 @@
 		"*.vcl": "bat",
 		"*.cf": "properties",
 		"*.sh": "shellscript",
-		"kiss_fft.c": "cpp"
+		"kiss_fft.c": "cpp",
+		"unordered_map": "cpp",
+		"istream": "cpp",
+		"numeric": "cpp",
+		"ostream": "cpp",
+		"sstream": "cpp",
+		"cmath": "cpp"
 	},
 	"idf.pythonInstallPath": "/home/jahrulnr/miniconda3/bin/python"
 }

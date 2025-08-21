@@ -31,9 +31,11 @@ void displayTask(void *param) {
 			if (updateDelay == 0) {
 				updateDelay = millis() + 3000;
 				lastEvent = EVENT_DISPLAY_WAKEWORD;
+				faceDisplay->LookFront();
+				faceDisplay->Expression.GoTo_Happy();
 			}
-			// displayHappyFace();
-			Mochi::drawFrame(display);
+			displayHappyFace();
+			// Mochi::drawFrame(display);
 			// send buffer will handled by Face class
 		}
 

@@ -30,7 +30,7 @@ public:
      * @param sampleRate Sample rate in Hz (8000, 16000, etc.)
      * @return true if initialization was successful, false otherwise
      */
-    bool init(uint32_t sampleRate = 8000);
+    bool init(uint16_t sampleRate = 16000);
 
     /**
      * Read the current audio level
@@ -98,14 +98,14 @@ public:
      * @param sampleRate New sample rate in Hz
      * @return true if successful, false otherwise
      */
-    bool setSampleRate(uint32_t sampleRate);
+    bool setSampleRate(uint16_t sampleRate);
     
     /**
      * Get the current sample rate
      * 
      * @return Current sample rate in Hz
      */
-    uint32_t getSampleRate() const;
+    uint16_t getSampleRate() const;
     
     /**
      * Read audio samples at the specified sample rate
@@ -116,15 +116,8 @@ public:
      */
     int readSamplesWithTiming(int16_t* buffer, size_t sampleCount);
 
-private:
-    const char* _tag;
-    int _analogPin;
-    int _gainPin;
-    int _attackReleasePin;
-    bool _initialized;
-    int _baselineLevel;
-    uint32_t _sampleRate;
-    unsigned long _lastSampleTime;
+    bool isActive() { return true; }
+    bool start() { return true; }
     
     /**
      * Internal function to read multiple samples
@@ -134,4 +127,14 @@ private:
      * @return Array of sample values (caller must delete)
      */
     int* readSamples(int samples, int delayMs = 1);
+    int readSamples(int16_t* buffer, size_t sampleCount, uint32_t timeoutMs = 100);
+
+private:
+    int _analogPin;
+    int _gainPin;
+    int _attackReleasePin;
+    bool _initialized;
+    int _baselineLevel;
+    uint16_t _sampleRate;
+    unsigned long _lastSampleTime;
 };

@@ -13,7 +13,7 @@ void runTasks(){
 
 	xTaskCreateUniversal(
 		displayTask,
-		"displayTaskTaskHandle",
+		"displayTask",
 		1024 * 4,
 		NULL,
 		19,

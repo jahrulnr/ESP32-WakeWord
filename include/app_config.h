@@ -3,27 +3,28 @@
 #define SCL_PIN SCL
 #define SDA_PIN SDA
 
-enum E_MIC_TYPE {
-	MIC_TYPE_I2S,
-	MIC_TYPE_ANALOG,
-};
+#define MIC_TYPE_I2S 0
+#define MIC_TYPE_ANALOG 1
 
-#define MIC_TYPE MIC_TYPE_I2S
+// set to analog or i2s microphone
+#define MIC_TYPE MIC_TYPE_ANALOG
+// #define MIC_TYPE MIC_TYPE_I2S
+
+// i2s microphone
 #ifdef SEED_XIAO_ESP32S3
-#define MIC_SCK 42
-#define MIC_WS  -1
-#define MIC_DIN 41
+#define MIC_SCK GPIO_NUM_42
+#define MIC_WS  GPIO_NUM_NC
+#define MIC_DIN GPIO_NUM_41
 #else
-// #define MIC_SCK 41
-// #define MIC_WS  42
-// #define MIC_DIN 2
-#define MIC_DIN 11 // 2           // I2S data pin (SD)
-#define MIC_SCK 5          // I2S clock pin (SCK)
-#define MIC_WS 13             // I2S word select pin (WS/FS)
+#define MIC_SCK GPIO_NUM_41
+#define MIC_WS  GPIO_NUM_42
+#define MIC_DIN GPIO_NUM_2
 #endif
 
-#define MIC_SAMPLE_RATE 16000
-#define MIC_BIT_PER_SAMPLE 32
+// analog microphone
+#define MIC_AR   GPIO_NUM_39
+#define MIC_OUT	 GPIO_NUM_4 // esp32-s3 range pin (0-20)
+#define MIC_GAIN GPIO_NUM_38
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64

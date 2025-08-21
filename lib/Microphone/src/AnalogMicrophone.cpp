@@ -2,15 +2,14 @@
 
 AnalogMicrophone::AnalogMicrophone(int analogPin, int gainPin, int attackReleasePin) 
     : _analogPin(analogPin), _gainPin(gainPin), _attackReleasePin(attackReleasePin), 
-      _initialized(false), _baselineLevel(0), _sampleRate(8000), _lastSampleTime(0),
-      _tag("I2S Mic") {
+      _initialized(false), _baselineLevel(0), _sampleRate(8000), _lastSampleTime(0) {
 }
 
 AnalogMicrophone::~AnalogMicrophone() {
     // No special cleanup needed for analog pins
 }
 
-bool AnalogMicrophone::init(uint32_t sampleRate) {
+bool AnalogMicrophone::init(uint16_t sampleRate) {
     if (_initialized) {
         return true; // Already initialized
     }
@@ -36,7 +35,7 @@ bool AnalogMicrophone::init(uint32_t sampleRate) {
     _sampleRate = sampleRate;
     
     // Set ADC resolution to 12 bits for better precision
-    analogReadResolution(12);
+    analogReadResolution(10);
     
     // Allow some time for the microphone amplifier to stabilize
     delay(100);
@@ -168,7 +167,43 @@ int* AnalogMicrophone::readSamples(int samples, int delayMs) {
     return sampleArray;
 }
 
-bool AnalogMicrophone::setSampleRate(uint32_t sampleRate) {
+int AnalogMicrophone::readSamples(int16_t* buffer, size_t sampleCount, uint32_t timeoutMs){
+    if (!buffer || sampleCount == 0) {
+        return ESP_FAIL;
+    }
+
+    if (!_initialized || !buffer || sampleCount == 0) {
+        return 0;
+    }
+    
+    // Calculate time between samples in microseconds
+    unsigned long microsPerSample = 1000000 / _sampleRate;
+    size_t samplesRead = 0;
+    
+    for (size_t i = 0; i < sampleCount; i++) {
+        // Wait until it's time to take the next sample
+        unsigned long currentTime = micros();
+        unsigned long elapsedMicros = currentTime - _lastSampleTime;
+        
+        if (elapsedMicros < microsPerSample) {
+            // Need to wait
+            delayMicroseconds(microsPerSample - elapsedMicros);
+            currentTime = micros();
+        }
+        
+        // Read the sample
+        int rawSample = analogRead(_analogPin);
+        // Convert to 16-bit signed integer (-32768 to 32767)
+        buffer[i] = (int16_t)map(rawSample, 0, 4095, -32768, 32767);
+        
+        samplesRead++;
+        _lastSampleTime = currentTime;
+    }
+    
+    return samplesRead;
+}
+
+bool AnalogMicrophone::setSampleRate(uint16_t sampleRate) {
     if (sampleRate < 1000 || sampleRate > 48000) {
         // Limit to reasonable range
         return false;
@@ -178,7 +213,7 @@ bool AnalogMicrophone::setSampleRate(uint32_t sampleRate) {
     return true;
 }
 
-uint32_t AnalogMicrophone::getSampleRate() const {
+uint16_t AnalogMicrophone::getSampleRate() const {
     return _sampleRate;
 }
 

@@ -1,25 +1,32 @@
 #include "init.h"
-#include "app_config.h"
-#include <Wire.h>
 
+#if MIC_TYPE == MIC_TYPE_I2S
 I2SMicrophone* microphone = nullptr;
+#else
+AnalogMicrophone* amicrophone = nullptr;
+#endif
+
 Notification *notification = nullptr;
 Face* faceDisplay = nullptr;
 bool sr_system_running = false;
 
 void setupApp(){
 	Serial.println("[setupApp] initiate global variable");
-	// setupTfWakeWord();
 
 	Wire.begin(SDA_PIN, SCL_PIN);
 	
 	setupNotification();
+#if MIC_TYPE == MIC_TYPE_I2S
 	setupI2SMicrophone();
+#else
+    setupAnalogMicrophone();
+#endif
 	setupDisplay(SDA_PIN, SCL_PIN);
 	setupFaceDisplay(40);
 	setupSpeechRecognition();
 }
 
+#if MIC_TYPE == MIC_TYPE_I2S
 // New setup function for I2SMicrophone using ESP-IDF v5+ API
 void setupI2SMicrophone() {
     Serial.println("[setupI2SMicrophone] Initializing I2S Standard driver...");
@@ -49,6 +56,22 @@ void setupI2SMicrophone() {
         Serial.println("[setupI2SMicrophone] I2S Standard driver initialized and started successfully");
     }
 }
+#else
+void setupAnalogMicrophone(){
+    if (!amicrophone) {
+        amicrophone = new AnalogMicrophone(MIC_OUT, MIC_GAIN, MIC_AR);
+        
+        esp_err_t ret = amicrophone->init();
+        if (ret != ESP_OK) {
+            Serial.printf("[setupAnalogMicrophone] ERROR: Failed to start analog microphone: %s\n", esp_err_to_name(ret));
+            return;
+        }
+        amicrophone->setGain(INPUT);
+        amicrophone->setAttackRelease(true);
+        delay(1000);
+    }
+}
+#endif
 
 void setupNotification() {
 	if (!notification) {
@@ -105,23 +128,36 @@ void setupFaceDisplay(uint16_t size) {
 
 void setupSpeechRecognition() {
     void* mic_instance = nullptr;
+#if MIC_TYPE == MIC_TYPE_I2S
     if (microphone && microphone->isInitialized()) {
         mic_instance = (void*)microphone;
     } else {
         Serial.println("❌ Cannot setup SR: No active I2S implementation");
         return;
     }
+#else
+    if (amicrophone && amicrophone->isInitialized()) {
+        mic_instance = (void*)amicrophone;
+    } else {
+        Serial.println("❌ Cannot setup SR: No active Analog implementation");
+        return;
+    }
+#endif
     
     Serial.println("🧠 Setting up Speech Recognition system...");
     
     // Start ESP-SR system with high-level API
     esp_err_t ret = sr_start(
+#if MIC_TYPE == MIC_TYPE_I2S
         sr_i2s_fill_callback,                              // I2S data fill callback
+#else
+        sr_analog_fill_callback,                           // analog data fill callback
+#endif
         mic_instance,                                      // Microphone instance (I2SMicrophone or I2SMicrophone)
         SR_CHANNELS_MONO,                                  // Single channel I2S input
         SR_MODE_WAKEWORD,                                  // Start in wake word mode
         voice_commands,                                    // Commands array
-        sizeof(voice_commands) / sizeof(sr_cmd_t),        // Number of commands
+        sizeof(voice_commands) / sizeof(sr_cmd_t),         // Number of commands
         sr_event_callback,                                 // Event callback
         NULL                                               // Event callback argument
     );
