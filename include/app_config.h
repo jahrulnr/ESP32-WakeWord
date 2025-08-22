@@ -7,8 +7,8 @@
 #define MIC_TYPE_ANALOG 1
 
 // set to analog or i2s microphone
-#define MIC_TYPE MIC_TYPE_ANALOG
-// #define MIC_TYPE MIC_TYPE_I2S
+// #define MIC_TYPE MIC_TYPE_ANALOG
+#define MIC_TYPE MIC_TYPE_I2S
 
 // i2s microphone
 #ifdef SEED_XIAO_ESP32S3
