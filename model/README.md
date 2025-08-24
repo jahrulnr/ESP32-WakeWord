@@ -25,6 +25,9 @@ esptool.py --baud 2000000 --before default_reset --after hard_reset  write_flash
 pio run -e esp32-s3-devkitc1-n16r8
 ```
 
+### Create Custom Speech Commands
+See [📝 Customize Speech Commands Guide](customize_speech_commands.md) for MultiNet7 phonetic command generation.
+
 ## 📁 Model Structure
 
 ```
@@ -61,6 +64,10 @@ model/
 ### Prerequisites
 - Python 3.x
 - ESP-IDF or ESP-SR framework
+
+### Custom Speech Commands
+For detailed instructions on creating custom speech commands with MultiNet7 phonetic generation, see:
+**[📝 Customize Speech Commands Guide](customize_speech_commands.md)**
 
 ### Available Models
 
