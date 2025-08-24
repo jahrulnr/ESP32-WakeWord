@@ -95,10 +95,10 @@ def pack_models(model_path, out_file="srmodels.bin"):
                 model_bin += struct.pack('I', header_len) 
                 data_bin = models[key][file_name]
                 model_bin += struct.pack('I', len(models[key][file_name]))
-                # print(file_name, header_len, len(models[key][file_name]), len(data_bin))
+                print(file_name, header_len, len(models[key][file_name]), len(data_bin))
             else:
                 model_bin += struct.pack('I', header_len+len(data_bin))
-                # print(file_name, header_len+len(data_bin), len(models[key][file_name]))
+                print(file_name, header_len+len(data_bin), len(models[key][file_name]))
                 data_bin += models[key][file_name]
                 model_bin += struct.pack('I', len(models[key][file_name]))
         

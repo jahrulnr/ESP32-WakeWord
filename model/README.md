@@ -16,7 +16,7 @@ cp -r vadnet_model/vadnet1_medium target/
 python3 pack_model.py -m target -o srmodels.bin
 
 # 3. Flash to your ESP32-S3-DevKitC-1-N16R8 (hiesp.csv partition table)
-esptool.py --baud 2000000 write_flash 0x710000 srmodels.bin
+esptool.py --baud 2000000 --before default_reset --after hard_reset  write_flash 0x710000 srmodels.bin
 ```
 
 ### Build Project
